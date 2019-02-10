@@ -7,7 +7,7 @@ import Html.Events exposing (onMouseDown, onMouseUp)
 import Json.Decode
 import List.Extra
 import Session exposing (Session)
-
+import Coord2D exposing (Coord2D)
 
 
 -- MODEL
@@ -25,30 +25,34 @@ type alias WindowsModel =
     { windows : List Window
     , cards : List Card
     , current_window : Maybe CurrentWindow
-    , mouse_position : Position
-    , mouse_delta : Position
+    , mouse_position : Coord2D
+    , mouse_delta : Coord2D
     }
 
 
 type alias CurrentWindow =
-    { click_position : Position
+    { click_position : Coord2D
     , window_id : WindowId
+    , manipulation : WindowManipulationType
     }
 
+type WindowManipulationType = MoveWindow | ResizeWindow
 
 type alias Window =
     { cardId : CardId
-    , position : Position
-    , width : Int
-    , height : Int
+    , position : Coord2D
+                 , size : Coord2D
+    -- , width : Int
+    -- , height : Int
     }
 
 
-type alias Position =
+type alias Coord2D =
     {- 2d position in pixels. -}
     { x : Int
     , y : Int
     }
+
 
 
 type alias CardId =
@@ -81,16 +85,16 @@ init session =
 initialWindows : WindowsModel
 initialWindows =
     { windows =
-        [ { cardId = 0, width = 100, height = 100, position = { x = 30, y = 40 } }
-        , { cardId = 1, width = 150, height = 100, position = { x = 150, y = 30 } }
+        [ { cardId = 0, size = {x =  100, y = 100}, position = { x = 30, y = 40 } }
+        , { cardId = 1, size = {x = 150, y = 100}, position = { x = 150, y = 30 } }
         ]
     , cards =
         [ { title = "Testcard 1", content = "Lorem Ipsum sit dolor amet" }
         , { title = "testcard 2", content = "The quick brown fox jumps over the lazy dog" }
         ]
     , current_window = Nothing
-    , mouse_position = Position 0 0
-    , mouse_delta = Position 0 0
+    , mouse_position = Coord2D.zero
+    , mouse_delta = Coord2D.zero
     }
 
 
@@ -128,8 +132,8 @@ viewWindow window_id cards window =
                 |> Maybe.withDefault "Unknown Card."
 
         attributes =
-            [ style "width" (String.fromInt window.width ++ "px")
-            , style "height" (String.fromInt window.height ++ "px")
+            [ style "width" (String.fromInt window.size.x ++ "px")
+            , style "height" (String.fromInt window.size.y ++ "px")
             , style "left" (String.fromInt window.position.x ++ "px")
             , style "top" (String.fromInt window.position.y ++ "px")
             ]
@@ -179,16 +183,16 @@ update msg model =
                     let
                         windows = windows_model.windows
                         mouse_position = windows_model.mouse_position
-                        new_mouse_postion = Position x y
-                        mouse_delta = Position (x - mouse_position.x) (y - mouse_position.y)
+                        new_mouse_postion = Coord2D x y
+                        mouse_delta = Coord2D (x - mouse_position.x) (y - mouse_position.y)
                         new_windows =
                             case windows_model.current_window of
                                 Nothing ->
                                     windows
                                 Just current_window ->
-                                    List.Extra.updateAt current_window.window_id (updateWindow mouse_delta) windows
+                                    List.Extra.updateAt current_window.window_id (updateWindow mouse_delta current_window.manipulation) windows
                     in
-                        { windows_model | windows = new_windows, mouse_position = Position x y, mouse_delta = mouse_delta }
+                        { windows_model | windows = new_windows, mouse_position = Coord2D x y, mouse_delta = mouse_delta }
             in
             ( { model | windows_model = new_windows_model }, Cmd.none )
 
@@ -199,8 +203,25 @@ update msg model =
             in
             ( { model | windows_model = windows_model }, commands )
 
-updateWindow mouse_delta window =
-    {window | position = {x = window.position.x + mouse_delta.x, y = window.position.y + mouse_delta.y}}
+updateWindow mouse_delta manipulation window =
+    case manipulation of
+        MoveWindow ->
+            let
+                new_position =
+                    {x = window.position.x + mouse_delta.x, y = window.position.y + mouse_delta.y}
+                        |> Coord2D.maxXY 0 0
+                        |> Coord2D.minXY 500 500
+            in
+                {window | position = new_position }
+
+        ResizeWindow ->
+            let
+                new_size =
+                    Coord2D.add window.size mouse_delta
+                        |> Coord2D.maxXY 100 100
+
+            in
+            {window | size = new_size }
 
 updateWindowsMessage : WindowsMessage -> WindowsModel -> ( WindowsModel, Cmd Msg )
 updateWindowsMessage msg model =
@@ -208,14 +229,14 @@ updateWindowsMessage msg model =
         StartWindowMove window_id ->
             let
                 current_window =
-                    Just { window_id = window_id, click_position = model.mouse_position }
+                    Just { window_id = window_id, click_position = model.mouse_position, manipulation = MoveWindow }
             in
             ( { model | current_window = current_window }, Cmd.none )
 
         StartWindowResize window_id ->
             let
                 current_window =
-                    Just { window_id = window_id, click_position = model.mouse_position }
+                    Just { window_id = window_id, click_position = model.mouse_position, manipulation = ResizeWindow }
             in
             ( { model | current_window = current_window }, Cmd.none )
 
