@@ -3,10 +3,11 @@ module Page.Home exposing (Model, Msg, init, subscriptions, toSession, update, v
 import Browser.Events
 import Coord2D exposing (Coord2D)
 import Html exposing (Html, div, h2, text, textarea)
-import Html.Attributes exposing (class, style)
-import Html.Events exposing (onMouseDown, onMouseUp)
+import Html.Attributes exposing (class, id, style)
+import Html.Events exposing (onInput, onMouseDown, onMouseUp)
 import Json.Decode
 import List.Extra
+import Maybe.Extra
 import Session exposing (Session)
 
 
@@ -24,6 +25,7 @@ type alias Model =
 
 type alias WindowsModel =
     { windows : List Window
+    , window_orders : List WindowId
     , cards : List Card
     , current_window : Maybe CurrentWindow
     , mouse_position : Coord2D
@@ -44,12 +46,9 @@ type WindowManipulationType
 
 
 type alias Window =
-    { cardId : CardId
+    { card_id : CardId
     , position : Coord2D
     , size : Coord2D
-
-    -- , width : Int
-    -- , height : Int
     }
 
 
@@ -90,9 +89,10 @@ init session =
 initialWindows : WindowsModel
 initialWindows =
     { windows =
-        [ { cardId = 0, size = { x = 100, y = 100 }, position = { x = 30, y = 40 } }
-        , { cardId = 1, size = { x = 150, y = 100 }, position = { x = 150, y = 30 } }
+        [ { card_id = 0, size = { x = 100, y = 100 }, position = { x = 30, y = 40 } }
+        , { card_id = 1, size = { x = 150, y = 100 }, position = { x = 150, y = 30 } }
         ]
+    , window_orders = [ 0, 1 ]
     , cards =
         [ { title = "Testcard 1", content = "Lorem Ipsum sit dolor amet" }
         , { title = "testcard 2", content = "The quick brown fox jumps over the lazy dog" }
@@ -122,20 +122,31 @@ view model =
 viewWindows : WindowsModel -> Html Msg
 viewWindows model =
     let
-        windows_html =
+        windows_html_elements =
             model.windows
                 |> List.map normalizeWindowSize
                 |> List.indexedMap (\window_index window -> viewWindow window_index model.cards window)
-                |> List.reverse
+
+        sorted_windows_html_elements =
+            windows_html_elements
+                |> List.indexedMap (\window_index window_html_fn ->
+                                        case List.Extra.elemIndex window_index model.window_orders of
+                                          Nothing -> Nothing
+                                          Just index -> Just (window_html_fn index)
+                                   )
+                   |> Maybe.Extra.values
+            -- model.window_orders
+            --     |> List.map (\index -> List.Extra.getAt index windows_html_elements |> Maybe.map (\fn -> fn index))
+            --     |> Maybe.Extra.values
     in
-    div [ onMouseUp (WindowsMessage StopWindowManipulation) ] windows_html
+    div [class "windows", onMouseUp (WindowsMessage StopWindowManipulation) ] sorted_windows_html_elements
 
 
-viewWindow window_id cards window =
+viewWindow window_id cards window window_depth_index =
     let
         content =
             cards
-                |> List.Extra.getAt window.cardId
+                |> List.Extra.getAt window.card_id
                 |> Maybe.map .content
                 |> Maybe.withDefault "Unknown Card."
 
@@ -150,13 +161,14 @@ viewWindow window_id cards window =
             , style "height" (String.fromInt size.y ++ "px")
             , style "left" (String.fromInt position.x ++ "px")
             , style "top" (String.fromInt position.y ++ "px")
+            , style "z-index" (String.fromInt -window_depth_index )
             ]
     in
     div ([ class "window" ] ++ attributes)
         [ div [ class "window-body" ]
             [ div [ class "window-bar", onMouseDown (WindowsMessage <| StartWindowMove window_id) ] []
             , div [ class "window-resize-handle", onMouseDown (WindowsMessage <| StartWindowResize window_id) ] [ text "" ]
-            , textarea [ class "window-content" ]
+            , textarea [ class "window-content", id ("textarea-" ++ String.fromInt window.card_id), onInput (\str -> WindowsMessage <| ChangeCardContent window.card_id str) ]
                 [ text content
                 ]
             ]
@@ -177,6 +189,7 @@ type WindowsMessage
     = StartWindowMove WindowId
     | StartWindowResize WindowId
     | StopWindowManipulation
+    | ChangeCardContent CardId String
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -212,7 +225,7 @@ update msg model =
                                     windows
 
                                 Just current_window ->
-                                    List.Extra.updateAt 0 (updateWindow mouse_delta current_window.manipulation) windows
+                                    List.Extra.updateAt current_window.window_id (updateWindow mouse_delta current_window.manipulation) windows
                     in
                     { windows_model | windows = new_windows, mouse_position = Coord2D x y, mouse_delta = mouse_delta }
             in
@@ -248,23 +261,25 @@ updateWindowsMessage msg model =
     case msg of
         StartWindowMove window_id ->
             let
-                new_windows =
-                    moveToFront window_id model.windows
+                new_window_orders =
+                    moveValueToFront window_id model.window_orders
 
                 current_window =
-                    Just { window_id = window_id, click_position = model.mouse_position, manipulation = MoveWindow }
+                    Just { window_id = window_id,  click_position = model.mouse_position, manipulation = MoveWindow }
             in
-            ( { model | windows = new_windows, current_window = current_window }, Cmd.none )
+            ( { model | window_orders = new_window_orders, current_window = current_window }, Cmd.none )
 
         StartWindowResize window_id ->
             let
-                new_windows =
-                    moveToFront window_id model.windows
+                -- new_windows =
+                --     moveToFront window_id model.windows
+                new_window_orders =
+                    moveValueToFront window_id model.window_orders
 
                 current_window =
                     Just { window_id = window_id, click_position = model.mouse_position, manipulation = ResizeWindow }
             in
-            ( { model | windows = new_windows, current_window = current_window }, Cmd.none )
+            ( { model | window_orders = new_window_orders, current_window = current_window }, Cmd.none )
 
         StopWindowManipulation ->
             let
@@ -273,6 +288,18 @@ updateWindowsMessage msg model =
                         |> List.map normalizeWindowSize
             in
             ( { model | current_window = Nothing, windows = new_windows }, Cmd.none )
+
+        ChangeCardContent card_id content ->
+            let
+                new_cards =
+                    model.cards
+                        |> List.Extra.updateAt card_id (changeCardContent content)
+            in
+            ( { model | cards = new_cards }, Cmd.none )
+
+
+changeCardContent content card =
+    { card | content = content }
 
 
 normalizeWindowSize window =
@@ -291,16 +318,31 @@ normalizeWindowSize window =
 
 moveToFront : Int -> List a -> List a
 moveToFront index list =
+    list
+
+
+
+-- let
+--     list_head =
+--         List.Extra.getAt index list
+--             |> Maybe.map List.singleton
+--             |> Maybe.withDefault []
+--     list_tail =
+--         List.Extra.removeAt index list
+-- in
+-- list_head ++ list_tail
+
+
+moveValueToFront : Int -> List Int -> List Int
+moveValueToFront value list =
     let
         list_head =
-            List.Extra.getAt index list
-                |> Maybe.map List.singleton
-                |> Maybe.withDefault []
+            value
 
         list_tail =
-            List.Extra.removeAt index list
+            List.filter (\x -> x /= value) list
     in
-    list_head ++ list_tail
+    list_head :: list_tail
 
 
 
