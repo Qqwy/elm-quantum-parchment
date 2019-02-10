@@ -1,8 +1,10 @@
 module Page.Home exposing (Model, Msg, init, subscriptions, toSession, update, view)
 
+import Browser.Events
 import Html exposing (Html, div, h2, text)
 import Html.Attributes exposing (class, style)
 import Html.Events exposing (onMouseDown, onMouseUp)
+import Json.Decode
 import List.Extra
 import Session exposing (Session)
 
@@ -23,12 +25,13 @@ type alias WindowsModel =
     { windows : List Window
     , cards : List Card
     , current_window : Maybe CurrentWindow
+    , mouse_position : Position
     }
 
 
 type alias CurrentWindow =
     { click_position : Position
-    , window_id: WindowId
+    , window_id : WindowId
     }
 
 
@@ -85,6 +88,7 @@ initialWindows =
         , { title = "testcard 2", content = "The quick brown fox jumps over the lazy dog" }
         ]
     , current_window = Nothing
+    , mouse_position = Position 0 0
     }
 
 
@@ -110,7 +114,7 @@ viewWindows model =
         windows_html =
             List.indexedMap (\window_index window -> viewWindow window_index model.cards window) model.windows
     in
-    div [onMouseUp (WindowsMessage StopWindowManipulation)] windows_html
+    div [ onMouseUp (WindowsMessage StopWindowManipulation) ] windows_html
 
 
 viewWindow window_id cards window =
@@ -131,7 +135,7 @@ viewWindow window_id cards window =
     div ([ class "window" ] ++ attributes)
         [ div [ class "window-body" ]
             [ div [ class "window-bar", onMouseDown (WindowsMessage <| StartWindowMove window_id) ] []
-            , div [ class "window-resize-handle", onMouseDown (WindowsMessage <| StartWindowResize window_id)] [ text "" ]
+            , div [ class "window-resize-handle", onMouseDown (WindowsMessage <| StartWindowResize window_id) ] [ text "" ]
             , div [ class "window-content" ]
                 [ text content
                 ]
@@ -145,6 +149,7 @@ viewWindow window_id cards window =
 
 type Msg
     = WindowsMessage WindowsMessage
+    | MouseMove Int Int
     | Todo
 
 
@@ -160,23 +165,46 @@ update msg model =
         Todo ->
             ( model, Cmd.none )
 
-        WindowsMessage window_message ->
-            let (windows_model, commands) =
-                  updateWindowsMessage window_message model.windows_model
-              in
-                  ({model | windows_model = windows_model}, commands)
+        MouseMove x y ->
+            let
+                _ =
+                    Debug.log "MouseMove" ( x, y )
 
-updateWindowsMessage : WindowsMessage -> WindowsModel -> (WindowsModel, Cmd Msg)
+                windows_model =
+                    model.windows_model
+
+                new_windows_model =
+                    { windows_model | mouse_position = Position x y }
+            in
+            ( { model | windows_model = new_windows_model }, Cmd.none )
+
+        WindowsMessage window_message ->
+            let
+                ( windows_model, commands ) =
+                    updateWindowsMessage window_message model.windows_model
+            in
+            ( { model | windows_model = windows_model }, commands )
+
+
+updateWindowsMessage : WindowsMessage -> WindowsModel -> ( WindowsModel, Cmd Msg )
 updateWindowsMessage msg model =
     case msg of
         StartWindowMove window_id ->
-            ( {model | current_window = Just {window_id = window_id, click_position = {x = 0, y = 0}}}, Cmd.none )
+            let
+                current_window =
+                    Just { window_id = window_id, click_position = model.mouse_position }
+            in
+            ( { model | current_window = current_window }, Cmd.none )
 
         StartWindowResize window_id ->
-            ( model, Cmd.none )
+            let
+                current_window =
+                    Just { window_id = window_id, click_position = model.mouse_position }
+            in
+            ( { model | current_window = current_window }, Cmd.none )
 
         StopWindowManipulation ->
-            ( {model | current_window = Nothing}, Cmd.none )
+            ( { model | current_window = Nothing }, Cmd.none )
 
 
 
@@ -185,7 +213,14 @@ updateWindowsMessage msg model =
 
 subscriptions : Model -> Sub Msg
 subscriptions _ =
-    Sub.none
+    -- Sub.none
+    Browser.Events.onMouseMove mousePosDecoder
+
+
+mousePosDecoder =
+    Json.Decode.map2 MouseMove
+        (Json.Decode.field "clientX" Json.Decode.int)
+        (Json.Decode.field "clientY" Json.Decode.int)
 
 
 
