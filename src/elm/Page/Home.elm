@@ -2,7 +2,7 @@ module Page.Home exposing (Model, Msg, init, subscriptions, toSession, update, v
 
 import Browser.Events
 import Coord2D exposing (Coord2D)
-import Html exposing (Html, div, h2, text)
+import Html exposing (Html, div, h2, text, textarea)
 import Html.Attributes exposing (class, style)
 import Html.Events exposing (onMouseDown, onMouseUp)
 import Json.Decode
@@ -156,7 +156,7 @@ viewWindow window_id cards window =
         [ div [ class "window-body" ]
             [ div [ class "window-bar", onMouseDown (WindowsMessage <| StartWindowMove window_id) ] []
             , div [ class "window-resize-handle", onMouseDown (WindowsMessage <| StartWindowResize window_id) ] [ text "" ]
-            , div [ class "window-content" ]
+            , textarea [ class "window-content" ]
                 [ text content
                 ]
             ]

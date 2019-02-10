@@ -4,6 +4,9 @@
 // Bootstrap 4.1
 // @import "~bootstrap/scss/bootstrap";
 
+* {
+    box-sizing: border-box;
+}
 
 .window {
     position: absolute;
@@ -20,26 +23,47 @@
 
     }
     .window-content {
-        padding: 20px;
+        position: absolute;
+        padding-top: 20px;
+        padding-left: 10px;
+        padding-right: 10px;
+        margin-bottom: -10px;
+        margin-right: -10px;
+        top: 0px;
+        left: 0;
+        right: 0px;
+        bottom: 0px;
+        width: 100%;
+        height: 100%;
+
+        border: none;
+
     }
     .window-bar {
         position: absolute;
+        z-index: 2;
 
         left: 0;
         right: 0;
         top: 0;
 
         height: 20px;
-        background-color: rgba(0,0,0,0.3);
+        background-color: rgba(0,0,0,0.9);
+        color: white;
+
+        cursor: move;
     }
 
     .window-resize-handle {
         position: absolute;
+        z-index: 2;
 
         bottom: 0;
         right: 0;
         width: 20px;
         height: 20px;
-        background-color: rgba(0,0,0,0.3);
+        background-color: rgba(0,0,0,0.1);
+
+        cursor: nwse-resize;
     }
 }
