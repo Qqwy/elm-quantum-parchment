@@ -2,4 +2,42 @@
 // @import './bootstrap-overrides.scss'
 
 // Bootstrap 4.1
-@import "~bootstrap/scss/bootstrap";
+// @import "~bootstrap/scss/bootstrap";
+
+
+.window {
+    position: absolute;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 6px 6px 3px rgba(0,0,0,0.3);
+    border: 1px solid rgba(0,0,0,0.5);
+
+    .window-body {
+        position: relative;
+        width: 100%;
+        height: 100%;
+    }
+    .window-content {
+        padding: 20px;
+    }
+    .window-bar {
+        position: absolute;
+
+        left: 0;
+        right: 0;
+        top: 0;
+
+        height: 20px;
+        background-color: rgba(0,0,0,0.3);
+    }
+
+    .window-resize-handle {
+        position: absolute;
+
+        bottom: 0;
+        right: 0;
+        width: 20px;
+        height: 20px;
+        background-color: rgba(0,0,0,0.3);
+    }
+}
