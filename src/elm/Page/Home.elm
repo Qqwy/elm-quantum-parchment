@@ -1,13 +1,14 @@
 module Page.Home exposing (Model, Msg, init, subscriptions, toSession, update, view)
 
 import Browser.Events
+import Coord2D exposing (Coord2D)
 import Html exposing (Html, div, h2, text)
 import Html.Attributes exposing (class, style)
 import Html.Events exposing (onMouseDown, onMouseUp)
 import Json.Decode
 import List.Extra
 import Session exposing (Session)
-import Coord2D exposing (Coord2D)
+
 
 
 -- MODEL
@@ -36,12 +37,17 @@ type alias CurrentWindow =
     , manipulation : WindowManipulationType
     }
 
-type WindowManipulationType = MoveWindow | ResizeWindow
+
+type WindowManipulationType
+    = MoveWindow
+    | ResizeWindow
+
 
 type alias Window =
     { cardId : CardId
     , position : Coord2D
-                 , size : Coord2D
+    , size : Coord2D
+
     -- , width : Int
     -- , height : Int
     }
@@ -52,7 +58,6 @@ type alias Coord2D =
     { x : Int
     , y : Int
     }
-
 
 
 type alias CardId =
@@ -85,8 +90,8 @@ init session =
 initialWindows : WindowsModel
 initialWindows =
     { windows =
-        [ { cardId = 0, size = {x =  100, y = 100}, position = { x = 30, y = 40 } }
-        , { cardId = 1, size = {x = 150, y = 100}, position = { x = 150, y = 30 } }
+        [ { cardId = 0, size = { x = 100, y = 100 }, position = { x = 30, y = 40 } }
+        , { cardId = 1, size = { x = 150, y = 100 }, position = { x = 150, y = 30 } }
         ]
     , cards =
         [ { title = "Testcard 1", content = "Lorem Ipsum sit dolor amet" }
@@ -118,7 +123,9 @@ viewWindows : WindowsModel -> Html Msg
 viewWindows model =
     let
         windows_html =
-            List.indexedMap (\window_index window -> viewWindow window_index model.cards window) model.windows
+            model.windows
+                |> List.map normalizeWindowSize
+                |> List.indexedMap (\window_index window -> viewWindow window_index model.cards window)
     in
     div [ onMouseUp (WindowsMessage StopWindowManipulation) ] windows_html
 
@@ -131,11 +138,17 @@ viewWindow window_id cards window =
                 |> Maybe.map .content
                 |> Maybe.withDefault "Unknown Card."
 
+        size =
+            window.size
+
+        position =
+            window.position
+
         attributes =
-            [ style "width" (String.fromInt window.size.x ++ "px")
-            , style "height" (String.fromInt window.size.y ++ "px")
-            , style "left" (String.fromInt window.position.x ++ "px")
-            , style "top" (String.fromInt window.position.y ++ "px")
+            [ style "width" (String.fromInt size.x ++ "px")
+            , style "height" (String.fromInt size.y ++ "px")
+            , style "left" (String.fromInt position.x ++ "px")
+            , style "top" (String.fromInt position.y ++ "px")
             ]
     in
     div ([ class "window" ] ++ attributes)
@@ -173,26 +186,35 @@ update msg model =
 
         MouseMove x y ->
             let
-                _ =
-                    Debug.log "MouseMove" ( x, y )
+                -- _ =
+                --     Debug.log "MouseMove" ( x, y )
 
                 windows_model =
                     model.windows_model
 
                 new_windows_model =
                     let
-                        windows = windows_model.windows
-                        mouse_position = windows_model.mouse_position
-                        new_mouse_postion = Coord2D x y
-                        mouse_delta = Coord2D (x - mouse_position.x) (y - mouse_position.y)
+                        windows =
+                            windows_model.windows
+
+                        mouse_position =
+                            windows_model.mouse_position
+
+                        new_mouse_postion =
+                            Coord2D x y
+
+                        mouse_delta =
+                            Coord2D (x - mouse_position.x) (y - mouse_position.y)
+
                         new_windows =
                             case windows_model.current_window of
                                 Nothing ->
                                     windows
+
                                 Just current_window ->
                                     List.Extra.updateAt current_window.window_id (updateWindow mouse_delta current_window.manipulation) windows
                     in
-                        { windows_model | windows = new_windows, mouse_position = Coord2D x y, mouse_delta = mouse_delta }
+                    { windows_model | windows = new_windows, mouse_position = Coord2D x y, mouse_delta = mouse_delta }
             in
             ( { model | windows_model = new_windows_model }, Cmd.none )
 
@@ -203,25 +225,23 @@ update msg model =
             in
             ( { model | windows_model = windows_model }, commands )
 
+
 updateWindow mouse_delta manipulation window =
     case manipulation of
         MoveWindow ->
             let
                 new_position =
-                    {x = window.position.x + mouse_delta.x, y = window.position.y + mouse_delta.y}
-                        |> Coord2D.maxXY 0 0
-                        |> Coord2D.minXY 500 500
+                    { x = window.position.x + mouse_delta.x, y = window.position.y + mouse_delta.y }
             in
-                {window | position = new_position }
+            { window | position = new_position }
 
         ResizeWindow ->
             let
                 new_size =
                     Coord2D.add window.size mouse_delta
-                        |> Coord2D.maxXY 100 100
-
             in
-            {window | size = new_size }
+            { window | size = new_size }
+
 
 updateWindowsMessage : WindowsMessage -> WindowsModel -> ( WindowsModel, Cmd Msg )
 updateWindowsMessage msg model =
@@ -241,7 +261,26 @@ updateWindowsMessage msg model =
             ( { model | current_window = current_window }, Cmd.none )
 
         StopWindowManipulation ->
-            ( { model | current_window = Nothing }, Cmd.none )
+            let
+                new_windows =
+                    model.windows
+                        |> List.map normalizeWindowSize
+            in
+            ( { model | current_window = Nothing, windows = new_windows }, Cmd.none )
+
+
+normalizeWindowSize window =
+    let
+        size =
+            window.size
+                |> Coord2D.maxXY 100 100
+
+        position =
+            window.position
+                |> Coord2D.maxXY 0 0
+                |> Coord2D.minXY 500 500
+    in
+    { window | size = size, position = position }
 
 
 
