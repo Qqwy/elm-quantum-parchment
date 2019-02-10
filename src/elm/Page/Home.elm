@@ -2,6 +2,7 @@ module Page.Home exposing (Model, Msg, init, subscriptions, toSession, update, v
 
 import Html exposing (Html, div, h2, text)
 import Html.Attributes exposing (class, style)
+import Html.Events exposing (onMouseDown, onMouseUp)
 import List.Extra
 import Session exposing (Session)
 
@@ -21,6 +22,13 @@ type alias Model =
 type alias WindowsModel =
     { windows : List Window
     , cards : List Card
+    , current_window : Maybe CurrentWindow
+    }
+
+
+type alias CurrentWindow =
+    { click_position : Position
+    , window_id: WindowId
     }
 
 
@@ -44,6 +52,11 @@ type alias CardId =
     Int
 
 
+type alias WindowId =
+    {- Index of card in WindowsModel.cards list -}
+    Int
+
+
 type alias Card =
     { title : String
     , content : String
@@ -53,8 +66,8 @@ type alias Card =
 init : Session -> ( Model, Cmd Msg )
 init session =
     ( { session = session
-      , pageTitle = "Home"
-      , pageBody = "This is the home page"
+      , pageTitle = ""
+      , pageBody = ""
       , windows_model = initialWindows
       }
     , Cmd.none
@@ -71,6 +84,7 @@ initialWindows =
         [ { title = "Testcard 1", content = "Lorem Ipsum sit dolor amet" }
         , { title = "testcard 2", content = "The quick brown fox jumps over the lazy dog" }
         ]
+    , current_window = Nothing
     }
 
 
@@ -94,12 +108,12 @@ viewWindows : WindowsModel -> Html Msg
 viewWindows model =
     let
         windows_html =
-            List.map (viewWindow model.cards) model.windows
+            List.indexedMap (\window_index window -> viewWindow window_index model.cards window) model.windows
     in
-    div [] windows_html
+    div [onMouseUp (WindowsMessage StopWindowManipulation)] windows_html
 
 
-viewWindow cards window =
+viewWindow window_id cards window =
     let
         content =
             cards
@@ -116,8 +130,8 @@ viewWindow cards window =
     in
     div ([ class "window" ] ++ attributes)
         [ div [ class "window-body" ]
-            [ div [ class "window-bar" ] []
-            , div [ class "window-resize-handle" ] [ text "" ]
+            [ div [ class "window-bar", onMouseDown (WindowsMessage <| StartWindowMove window_id) ] []
+            , div [ class "window-resize-handle", onMouseDown (WindowsMessage <| StartWindowResize window_id)] [ text "" ]
             , div [ class "window-content" ]
                 [ text content
                 ]
@@ -130,7 +144,14 @@ viewWindow cards window =
 
 
 type Msg
-    = Todo
+    = WindowsMessage WindowsMessage
+    | Todo
+
+
+type WindowsMessage
+    = StartWindowMove WindowId
+    | StartWindowResize WindowId
+    | StopWindowManipulation
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -138,6 +159,24 @@ update msg model =
     case msg of
         Todo ->
             ( model, Cmd.none )
+
+        WindowsMessage window_message ->
+            let (windows_model, commands) =
+                  updateWindowsMessage window_message model.windows_model
+              in
+                  ({model | windows_model = windows_model}, commands)
+
+updateWindowsMessage : WindowsMessage -> WindowsModel -> (WindowsModel, Cmd Msg)
+updateWindowsMessage msg model =
+    case msg of
+        StartWindowMove window_id ->
+            ( {model | current_window = Just {window_id = window_id, click_position = {x = 0, y = 0}}}, Cmd.none )
+
+        StartWindowResize window_id ->
+            ( model, Cmd.none )
+
+        StopWindowManipulation ->
+            ( {model | current_window = Nothing}, Cmd.none )
 
 
 

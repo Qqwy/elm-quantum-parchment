@@ -33,8 +33,8 @@ view : Page -> { title : String, content : Html msg } -> Document msg
 view page { title, content } =
     { title = title ++ " - Elm SPA"
     , body =
-        [ viewHeader page
-        , content
+        -- [ viewHeader page
+        [ content
         , viewFooter
         ]
     }
