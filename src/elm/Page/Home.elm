@@ -26,6 +26,7 @@ type alias WindowsModel =
     , cards : List Card
     , current_window : Maybe CurrentWindow
     , mouse_position : Position
+    , mouse_delta : Position
     }
 
 
@@ -89,6 +90,7 @@ initialWindows =
         ]
     , current_window = Nothing
     , mouse_position = Position 0 0
+    , mouse_delta = Position 0 0
     }
 
 
@@ -174,7 +176,19 @@ update msg model =
                     model.windows_model
 
                 new_windows_model =
-                    { windows_model | mouse_position = Position x y }
+                    let
+                        windows = windows_model.windows
+                        mouse_position = windows_model.mouse_position
+                        new_mouse_postion = Position x y
+                        mouse_delta = Position (x - mouse_position.x) (y - mouse_position.y)
+                        new_windows =
+                            case windows_model.current_window of
+                                Nothing ->
+                                    windows
+                                Just current_window ->
+                                    List.Extra.updateAt current_window.window_id (updateWindow mouse_delta) windows
+                    in
+                        { windows_model | windows = new_windows, mouse_position = Position x y, mouse_delta = mouse_delta }
             in
             ( { model | windows_model = new_windows_model }, Cmd.none )
 
@@ -185,6 +199,8 @@ update msg model =
             in
             ( { model | windows_model = windows_model }, commands )
 
+updateWindow mouse_delta window =
+    {window | position = {x = window.position.x + mouse_delta.x, y = window.position.y + mouse_delta.y}}
 
 updateWindowsMessage : WindowsMessage -> WindowsModel -> ( WindowsModel, Cmd Msg )
 updateWindowsMessage msg model =
