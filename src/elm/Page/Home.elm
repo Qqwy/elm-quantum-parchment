@@ -126,6 +126,7 @@ viewWindows model =
             model.windows
                 |> List.map normalizeWindowSize
                 |> List.indexedMap (\window_index window -> viewWindow window_index model.cards window)
+                |> List.reverse
     in
     div [ onMouseUp (WindowsMessage StopWindowManipulation) ] windows_html
 
@@ -188,7 +189,6 @@ update msg model =
             let
                 -- _ =
                 --     Debug.log "MouseMove" ( x, y )
-
                 windows_model =
                     model.windows_model
 
@@ -212,7 +212,7 @@ update msg model =
                                     windows
 
                                 Just current_window ->
-                                    List.Extra.updateAt current_window.window_id (updateWindow mouse_delta current_window.manipulation) windows
+                                    List.Extra.updateAt 0 (updateWindow mouse_delta current_window.manipulation) windows
                     in
                     { windows_model | windows = new_windows, mouse_position = Coord2D x y, mouse_delta = mouse_delta }
             in
@@ -248,17 +248,23 @@ updateWindowsMessage msg model =
     case msg of
         StartWindowMove window_id ->
             let
+                new_windows =
+                    moveToFront window_id model.windows
+
                 current_window =
                     Just { window_id = window_id, click_position = model.mouse_position, manipulation = MoveWindow }
             in
-            ( { model | current_window = current_window }, Cmd.none )
+            ( { model | windows = new_windows, current_window = current_window }, Cmd.none )
 
         StartWindowResize window_id ->
             let
+                new_windows =
+                    moveToFront window_id model.windows
+
                 current_window =
                     Just { window_id = window_id, click_position = model.mouse_position, manipulation = ResizeWindow }
             in
-            ( { model | current_window = current_window }, Cmd.none )
+            ( { model | windows = new_windows, current_window = current_window }, Cmd.none )
 
         StopWindowManipulation ->
             let
@@ -281,6 +287,20 @@ normalizeWindowSize window =
                 |> Coord2D.minXY 500 500
     in
     { window | size = size, position = position }
+
+
+moveToFront : Int -> List a -> List a
+moveToFront index list =
+    let
+        list_head =
+            List.Extra.getAt index list
+                |> Maybe.map List.singleton
+                |> Maybe.withDefault []
+
+        list_tail =
+            List.Extra.removeAt index list
+    in
+    list_head ++ list_tail
 
 
 
