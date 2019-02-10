@@ -144,11 +144,14 @@ viewWindows model =
 
 viewWindow window_id cards window window_depth_index =
     let
-        content =
+        card =
             cards
                 |> List.Extra.getAt window.card_id
-                |> Maybe.map .content
-                |> Maybe.withDefault "Unknown Card."
+                |> Maybe.withDefault {content = "Unknown Card.", title = "???"}
+        content =
+            card.content
+        title =
+            card.title
 
         size =
             window.size
@@ -166,9 +169,9 @@ viewWindow window_id cards window window_depth_index =
     in
     div ([ class "window" ] ++ attributes)
         [ div [ class "window-body" ]
-            [ div [ class "window-bar", onMouseDown (WindowsMessage <| StartWindowMove window_id) ] []
+            [ div [ class "window-bar", onMouseDown (WindowsMessage <| StartWindowMove window_id) ] [text title]
             , div [ class "window-resize-handle", onMouseDown (WindowsMessage <| StartWindowResize window_id) ] [ text "" ]
-            , textarea [ class "window-content", id ("textarea-" ++ String.fromInt window.card_id), onInput (\str -> WindowsMessage <| ChangeCardContent window.card_id str) ]
+            , textarea [ class "window-content", id ("textarea-" ++ String.fromInt window.card_id), onInput (\str -> WindowsMessage <| ChangeCardContent window.card_id str), onMouseDown (WindowsMessage <| MoveWindowToFront window_id) ]
                 [ text content
                 ]
             ]
@@ -190,6 +193,7 @@ type WindowsMessage
     | StartWindowResize WindowId
     | StopWindowManipulation
     | ChangeCardContent CardId String
+    | MoveWindowToFront WindowId
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -288,6 +292,12 @@ updateWindowsMessage msg model =
                         |> List.map normalizeWindowSize
             in
             ( { model | current_window = Nothing, windows = new_windows }, Cmd.none )
+        MoveWindowToFront window_id ->
+            let
+                new_window_orders =
+                    moveValueToFront window_id model.window_orders
+            in
+                ( { model | window_orders = new_window_orders}, Cmd.none )
 
         ChangeCardContent card_id content ->
             let
@@ -311,7 +321,7 @@ normalizeWindowSize window =
         position =
             window.position
                 |> Coord2D.maxXY 0 0
-                |> Coord2D.minXY 500 500
+                |> Coord2D.minXY 1600 800
     in
     { window | size = size, position = position }
 
