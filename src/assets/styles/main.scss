@@ -4,6 +4,12 @@
 // Bootstrap 4.1
 // @import "~bootstrap/scss/bootstrap";
 
+$window-bar-height: 20px;
+$window-border-radius: 10px;
+$window-minified-width: 150px;
+$window-hpadding: 10px;
+$window-resize-handle-size: 20px;
+
 * {
     box-sizing: border-box;
 }
@@ -13,12 +19,13 @@
 }
 .window {
     position: absolute;
-    border-radius: 10px;
+    border-radius: $window-border-radius;
     overflow: hidden;
     box-shadow: 3px 3px 6px rgba(0,0,0,0.3);
     border: 1px solid rgba(0,0,0,0.5);
 
-    transition: box-shadow .2s, width .2s, height .2s;
+    transition-duration: .2s;
+    transition-property: box-shadow, border, width, height;
 
 
     .window-body {
@@ -30,7 +37,7 @@
     }
     .window-content-edit, .window-content-show {
         position: absolute;
-        padding-top: 20px;
+        padding-top: $window-bar-height;
         padding-left: 10px;
         padding-right: 10px;
         top: 0px;
@@ -66,7 +73,7 @@
     .window-bar {
         position: absolute;
         z-index: 2;
-        padding: 0 20px;
+        padding: 0 $window-hpadding;
         overflow: hidden;
         text-overflow: ellipsis;
 
@@ -74,9 +81,10 @@
         right: 0;
         top: 0;
 
-        height: 20px;
+        height: $window-bar-height;
         background-color: rgba(0,0,0,0.9);
         color: white;
+        text-align: center;
 
         cursor: move;
 
@@ -89,15 +97,16 @@
 
         bottom: 0;
         right: 0;
-        width: 20px;
-        height: 20px;
+        width: $window-resize-handle-size;
+        height: $window-resize-handle-size;
         background-color: rgba(0,0,0,0.1);
+        border-top-left-radius: $window-resize-handle-size / 2;
 
         cursor: nwse-resize;
+        text-align: center;
     }
 
     &.read {
-        border: 1px solid red;
 
         .window-content-edit {
             display: none;
@@ -105,7 +114,7 @@
     }
 
     &.edit {
-        border: 1px solid green;
+        border: 2px solid  	#1E90FF;
 
         .window-content-show {
             display: none;
@@ -126,8 +135,8 @@
 
     &.minified {
 
-        height: 20px !important;
-        width: 150px !important;
+        height: $window-bar-height !important;
+        width: $window-minified-width !important;
 
         .window-bar {
             opacity: 0.5;
