@@ -2,13 +2,27 @@ module Page.Home exposing (Model, Msg, init, subscriptions, toSession, update, v
 
 import Browser.Events
 import Coord2D exposing (Coord2D)
-import Html exposing (Html, div, h2, text, textarea)
+import Html exposing (Html, div, h2, text, textarea, Attribute)
 import Html.Attributes exposing (class, id, style)
-import Html.Events exposing (onInput, onMouseDown, onMouseUp)
+import Html.Events exposing (onBlur, onClick, onDoubleClick, onInput, onMouseDown, onMouseUp)
 import Json.Decode
 import List.Extra
+import Markdown
 import Maybe.Extra
 import Session exposing (Session)
+
+
+onEscapeKeyDown : Msg -> Attribute Msg
+onEscapeKeyDown msg =
+    let
+        isEsc code =
+            if code == 27 then
+                Json.Decode.succeed msg
+
+            else
+                Json.Decode.fail "not ESC"
+    in
+    Html.Events.on "keydown" (Json.Decode.andThen isEsc Html.Events.keyCode)
 
 
 
@@ -95,13 +109,13 @@ init session =
 initialWindows : WindowsModel
 initialWindows =
     { windows =
-        [ { card_id = 0, size = { x = 100, y = 100 }, position = { x = 30, y = 40 }, mode = Read }
-        , { card_id = 1, size = { x = 150, y = 100 }, position = { x = 150, y = 30 }, mode = Edit }
+        [ { card_id = 0, size = { x = 100, y = 100 }, position = { x = 30, y = 40 }, mode = Edit }
+        , { card_id = 1, size = { x = 150, y = 100 }, position = { x = 150, y = 30 }, mode = Read }
         ]
     , window_orders = [ 0, 1 ]
     , cards =
         [ { title = "Testcard 1", content = "Lorem Ipsum sit dolor amet" }
-        , { title = "testcard 2", content = "The quick brown fox jumps over the lazy dog" }
+        , { title = "testcard 2", content = "The quick brown fox **jumps** over the [lazy dog](http://wmcode.nl)" }
         ]
     , current_window = Nothing
     , mouse_position = Coord2D.zero
@@ -192,10 +206,20 @@ viewWindow window_id cards window window_depth_index =
         [ div [ class "window-body" ]
             [ div [ class "window-bar", onMouseDown (WindowsMessage <| StartWindowMove window_id) ] [ text title ]
             , div [ class "window-resize-handle", onMouseDown (WindowsMessage <| StartWindowResize window_id) ] [ text "" ]
-            , textarea [ class "window-content-edit", id ("textarea-" ++ String.fromInt window.card_id), onInput (\str -> WindowsMessage <| ChangeCardContent window.card_id str), onMouseDown (WindowsMessage <| MoveWindowToFront window_id) ] [ text content]
-            , div [ class "window-content-show", onMouseDown (WindowsMessage <| MoveWindowToFront window_id) ]
-                [ text content
+            , textarea
+                [ class "window-content-edit"
+                , onInput (\str -> WindowsMessage <| ChangeCardContent window.card_id str)
+                , onMouseDown (WindowsMessage <| MoveWindowToFront window_id)
+                , onBlur (WindowsMessage <| ChangeWindowModeTo window_id Read)
+                , onEscapeKeyDown (WindowsMessage <| ChangeWindowModeTo window_id Read)
                 ]
+                [ text content ]
+            , div
+                [ class "window-content-show"
+                , onMouseDown (WindowsMessage <| MoveWindowToFront window_id)
+                , onDoubleClick (WindowsMessage <| ChangeWindowModeTo window_id Edit)
+                ]
+                (Markdown.toHtml Nothing content)
             ]
         ]
 
@@ -216,6 +240,7 @@ type WindowsMessage
     | StopWindowManipulation
     | ChangeCardContent CardId String
     | MoveWindowToFront WindowId
+    | ChangeWindowModeTo WindowId WindowMode
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -329,6 +354,14 @@ updateWindowsMessage msg model =
                         |> List.Extra.updateAt card_id (changeCardContent content)
             in
             ( { model | cards = new_cards }, Cmd.none )
+
+        ChangeWindowModeTo window_id new_mode ->
+            let
+                new_windows =
+                    model.windows
+                        |> List.Extra.updateAt window_id (\window -> { window | mode = new_mode })
+            in
+            ( { model | windows = new_windows }, Cmd.none )
 
 
 changeCardContent content card =
