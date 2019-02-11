@@ -49,7 +49,13 @@ type alias Window =
     { card_id : CardId
     , position : Coord2D
     , size : Coord2D
+    , mode : WindowMode
     }
+
+
+type WindowMode
+    = Read
+    | Edit
 
 
 type alias Coord2D =
@@ -89,8 +95,8 @@ init session =
 initialWindows : WindowsModel
 initialWindows =
     { windows =
-        [ { card_id = 0, size = { x = 100, y = 100 }, position = { x = 30, y = 40 } }
-        , { card_id = 1, size = { x = 150, y = 100 }, position = { x = 150, y = 30 } }
+        [ { card_id = 0, size = { x = 100, y = 100 }, position = { x = 30, y = 40 }, mode = Read }
+        , { card_id = 1, size = { x = 150, y = 100 }, position = { x = 150, y = 30 }, mode = Edit }
         ]
     , window_orders = [ 0, 1 ]
     , cards =
@@ -129,17 +135,22 @@ viewWindows model =
 
         sorted_windows_html_elements =
             windows_html_elements
-                |> List.indexedMap (\window_index window_html_fn ->
-                                        case List.Extra.elemIndex window_index model.window_orders of
-                                          Nothing -> Nothing
-                                          Just index -> Just (window_html_fn index)
-                                   )
-                   |> Maybe.Extra.values
-            -- model.window_orders
-            --     |> List.map (\index -> List.Extra.getAt index windows_html_elements |> Maybe.map (\fn -> fn index))
-            --     |> Maybe.Extra.values
+                |> List.indexedMap
+                    (\window_index window_html_fn ->
+                        case List.Extra.elemIndex window_index model.window_orders of
+                            Nothing ->
+                                Nothing
+
+                            Just index ->
+                                Just (window_html_fn index)
+                    )
+                |> Maybe.Extra.values
+
+        -- model.window_orders
+        --     |> List.map (\index -> List.Extra.getAt index windows_html_elements |> Maybe.map (\fn -> fn index))
+        --     |> Maybe.Extra.values
     in
-    div [class "windows", onMouseUp (WindowsMessage StopWindowManipulation) ] sorted_windows_html_elements
+    div [ class "windows", onMouseUp (WindowsMessage StopWindowManipulation) ] sorted_windows_html_elements
 
 
 viewWindow window_id cards window window_depth_index =
@@ -147,9 +158,11 @@ viewWindow window_id cards window window_depth_index =
         card =
             cards
                 |> List.Extra.getAt window.card_id
-                |> Maybe.withDefault {content = "Unknown Card.", title = "???"}
+                |> Maybe.withDefault { content = "Unknown Card.", title = "???" }
+
         content =
             card.content
+
         title =
             card.title
 
@@ -164,14 +177,23 @@ viewWindow window_id cards window window_depth_index =
             , style "height" (String.fromInt size.y ++ "px")
             , style "left" (String.fromInt position.x ++ "px")
             , style "top" (String.fromInt position.y ++ "px")
-            , style "z-index" (String.fromInt -window_depth_index )
+            , style "z-index" (String.fromInt -window_depth_index)
             ]
+
+        window_mode_class =
+            case window.mode of
+                Read ->
+                    "read"
+
+                Edit ->
+                    "edit"
     in
-    div ([ class "window" ] ++ attributes)
+    div ([ class "window", class window_mode_class ] ++ attributes)
         [ div [ class "window-body" ]
-            [ div [ class "window-bar", onMouseDown (WindowsMessage <| StartWindowMove window_id) ] [text title]
+            [ div [ class "window-bar", onMouseDown (WindowsMessage <| StartWindowMove window_id) ] [ text title ]
             , div [ class "window-resize-handle", onMouseDown (WindowsMessage <| StartWindowResize window_id) ] [ text "" ]
-            , textarea [ class "window-content", id ("textarea-" ++ String.fromInt window.card_id), onInput (\str -> WindowsMessage <| ChangeCardContent window.card_id str), onMouseDown (WindowsMessage <| MoveWindowToFront window_id) ]
+            , textarea [ class "window-content-edit", id ("textarea-" ++ String.fromInt window.card_id), onInput (\str -> WindowsMessage <| ChangeCardContent window.card_id str), onMouseDown (WindowsMessage <| MoveWindowToFront window_id) ] [ text content]
+            , div [ class "window-content-show", onMouseDown (WindowsMessage <| MoveWindowToFront window_id) ]
                 [ text content
                 ]
             ]
@@ -269,7 +291,7 @@ updateWindowsMessage msg model =
                     moveValueToFront window_id model.window_orders
 
                 current_window =
-                    Just { window_id = window_id,  click_position = model.mouse_position, manipulation = MoveWindow }
+                    Just { window_id = window_id, click_position = model.mouse_position, manipulation = MoveWindow }
             in
             ( { model | window_orders = new_window_orders, current_window = current_window }, Cmd.none )
 
@@ -292,12 +314,13 @@ updateWindowsMessage msg model =
                         |> List.map normalizeWindowSize
             in
             ( { model | current_window = Nothing, windows = new_windows }, Cmd.none )
+
         MoveWindowToFront window_id ->
             let
                 new_window_orders =
                     moveValueToFront window_id model.window_orders
             in
-                ( { model | window_orders = new_window_orders}, Cmd.none )
+            ( { model | window_orders = new_window_orders }, Cmd.none )
 
         ChangeCardContent card_id content ->
             let
