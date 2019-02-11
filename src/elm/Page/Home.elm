@@ -2,7 +2,7 @@ module Page.Home exposing (Model, Msg, init, subscriptions, toSession, update, v
 
 import Browser.Events
 import Coord2D exposing (Coord2D)
-import Html exposing (Html, div, h2, text, textarea, Attribute)
+import Html exposing (Attribute, Html, div, h2, text, textarea)
 import Html.Attributes exposing (class, id, style)
 import Html.Events exposing (onBlur, onClick, onDoubleClick, onInput, onMouseDown, onMouseUp)
 import Json.Decode
@@ -64,6 +64,7 @@ type alias Window =
     , position : Coord2D
     , size : Coord2D
     , mode : WindowMode
+    , is_minified : Bool
     }
 
 
@@ -109,8 +110,8 @@ init session =
 initialWindows : WindowsModel
 initialWindows =
     { windows =
-        [ { card_id = 0, size = { x = 100, y = 100 }, position = { x = 30, y = 40 }, mode = Edit }
-        , { card_id = 1, size = { x = 150, y = 100 }, position = { x = 150, y = 30 }, mode = Read }
+        [ { card_id = 0, size = { x = 100, y = 100 }, position = { x = 30, y = 40 }, mode = Edit, is_minified = False }
+        , { card_id = 1, size = { x = 150, y = 100 }, position = { x = 150, y = 30 }, mode = Read, is_minified = False }
         ]
     , window_orders = [ 0, 1 ]
     , cards =
@@ -201,10 +202,23 @@ viewWindow window_id cards window window_depth_index =
 
                 Edit ->
                     "edit"
+
+        minification_class =
+            case window.is_minified of
+                True ->
+                    "minified"
+
+                False ->
+                    ""
     in
-    div ([ class "window", class window_mode_class ] ++ attributes)
+    div ([ class "window", class window_mode_class, class minification_class ] ++ attributes)
         [ div [ class "window-body" ]
-            [ div [ class "window-bar", onMouseDown (WindowsMessage <| StartWindowMove window_id) ] [ text title ]
+            [ div
+                [ class "window-bar"
+                , onMouseDown (WindowsMessage <| StartWindowMove window_id)
+                , onDoubleClick (WindowsMessage <| ToggleMinification window_id)
+                ]
+                [ text title ]
             , div [ class "window-resize-handle", onMouseDown (WindowsMessage <| StartWindowResize window_id) ] [ text "" ]
             , textarea
                 [ class "window-content-edit"
@@ -241,6 +255,7 @@ type WindowsMessage
     | ChangeCardContent CardId String
     | MoveWindowToFront WindowId
     | ChangeWindowModeTo WindowId WindowMode
+    | ToggleMinification WindowId
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -360,6 +375,14 @@ updateWindowsMessage msg model =
                 new_windows =
                     model.windows
                         |> List.Extra.updateAt window_id (\window -> { window | mode = new_mode })
+            in
+            ( { model | windows = new_windows }, Cmd.none )
+
+        ToggleMinification window_id ->
+            let
+                new_windows =
+                    model.windows
+                        |> List.Extra.updateAt window_id (\window -> { window | is_minified = not window.is_minified })
             in
             ( { model | windows = new_windows }, Cmd.none )
 

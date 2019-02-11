@@ -18,7 +18,8 @@
     box-shadow: 3px 3px 6px rgba(0,0,0,0.3);
     border: 1px solid rgba(0,0,0,0.5);
 
-    transition: box-shadow .2s;
+    transition: box-shadow .2s, width .2s, height .2s;
+
 
     .window-body {
         position: relative;
@@ -78,6 +79,8 @@
         color: white;
 
         cursor: move;
+
+        transition: opacity .5s;
     }
 
     .window-resize-handle {
@@ -117,5 +120,24 @@
     }
     &:active {
         box-shadow: 6px 6px 6px rgba(0,0,0,0.6);
+
+        transition: width 0s, height 0s;
+    }
+
+    &.minified {
+
+        height: 20px !important;
+        width: 150px !important;
+
+        .window-bar {
+            opacity: 0.5;
+        }
+
+        .window-content-edit, .window-content-read {
+            display: none;
+        }
+        .window-resize-handle {
+            display: none;
+        }
     }
 }
