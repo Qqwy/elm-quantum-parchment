@@ -136,7 +136,7 @@ $window-resize-handle-size: 20px;
     &.minified {
 
         height: $window-bar-height !important;
-        width: $window-minified-width !important;
+        /* width: $window-minified-width !important; */
 
         .window-bar {
             opacity: 0.5;

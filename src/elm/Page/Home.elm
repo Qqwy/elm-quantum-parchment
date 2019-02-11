@@ -135,6 +135,7 @@ view model =
         div [ class "container" ]
             [ h2 [] [ text model.pageTitle ]
             , div [] [ text model.pageBody ]
+                , div [class "new-window-button", onClick NewWindow] [text "New Window"]
             , viewWindows model.windows_model
             ]
     }
@@ -245,6 +246,7 @@ viewWindow window_id cards window window_depth_index =
 type Msg
     = WindowsMessage WindowsMessage
     | MouseMove Int Int
+    | NewWindow
     | Todo
 
 
@@ -294,6 +296,39 @@ update msg model =
                                     List.Extra.updateAt current_window.window_id (updateWindow mouse_delta current_window.manipulation) windows
                     in
                     { windows_model | windows = new_windows, mouse_position = Coord2D x y, mouse_delta = mouse_delta }
+            in
+            ( { model | windows_model = new_windows_model }, Cmd.none )
+
+        NewWindow ->
+            let
+                windows_model =
+                    model.windows_model
+
+                cards =
+                    windows_model.cards
+
+                windows =
+                    windows_model.windows
+
+                new_card =
+                    { title = "", content = "" }
+
+                new_card_id =
+                    List.length cards
+
+                new_cards =
+                    cards ++ [ new_card ]
+
+                new_window =
+                    { card_id = new_card_id, size = { x = 150, y = 150 }, position = { x = 100, y = 100 }, mode = Edit, is_minified = False }
+                new_window_id = List.length windows
+
+                new_windows =
+                    windows ++ [new_window]
+                new_window_orders = new_window_id :: windows_model.window_orders
+
+                new_windows_model =
+                    { windows_model | cards = new_cards, windows = new_windows, window_orders = new_window_orders }
             in
             ( { model | windows_model = new_windows_model }, Cmd.none )
 
