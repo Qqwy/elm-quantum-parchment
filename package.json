@@ -7,7 +7,7 @@
     "url": "https://github.com/romariolopezc/elm-webpack-4-starter"
   },
   "contributors": [
-      "Wiebe-Marten Wijnja/Qqwy (wmcode.nl)"
+    "Wiebe-Marten Wijnja/Qqwy (wmcode.nl)"
   ],
   "scripts": {
     "webpack": "webpack",
