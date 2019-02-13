@@ -10,6 +10,12 @@ $window-minified-width: 150px;
 $window-hpadding: 30px;
 $window-resize-handle-size: 20px;
 
+html, body {
+    font-family: Georgia, Palatino Linotype, "serif";
+
+    font-size: 12px;
+}
+
 * {
     box-sizing: border-box;
 }
@@ -47,7 +53,7 @@ $window-resize-handle-size: 20px;
         overflow: auto;
 
         font-size: 13px;
-        font-family: "serif";
+        font-family: Georgia, Palatino Linotype, "serif";
 
 
         border: none;
@@ -65,6 +71,7 @@ $window-resize-handle-size: 20px;
             /* margin-bottom: -10px; */
             /* margin-right: -10px; */
             height: 100%;
+            padding-top: $window-bar-height + 10px;
         }
     }
 
@@ -100,6 +107,9 @@ $window-resize-handle-size: 20px;
 
             overflow: hidden;
             text-overflow: ellipsis;
+
+            font-family: Georgia, Palatino Linotype, "serif";
+            font-size: 1.4em;
         }
     }
 
@@ -177,3 +187,64 @@ body:hover {
     }
 
 }
+
+.button-menu {
+    .header {
+        display: inline-block;
+    }
+    .button {
+        display: inline-block;
+        padding: 5px 10px;
+        margin: 2px 10px;
+        background-color: rgba(0,0,0,0.1);
+        border-radius: 20px;
+
+        cursor: pointer;
+
+        transition-duration: .2s;
+
+        &:hover {
+            
+            background-color: rgba(0,0,0,0.05);
+        }
+    }
+}
+
+
+// ICOMOON
+@font-face {
+    font-family: 'icomoon';
+    src:  url('../fonts/icomoon.eot?xw27b9');
+    src:  url('../fonts/icomoon.eot?xw27b9#iefix') format('embedded-opentype'),
+          url('../fonts/icomoon.ttf?xw27b9') format('truetype'),
+          url('../fonts/icomoon.woff?xw27b9') format('woff'),
+          url('../fonts/icomoon.svg?xw27b9#icomoon') format('svg');
+    font-weight: normal;
+    font-style: normal;
+}
+
+[class^="icon-"], [class*=" icon-"] {
+    /* use !important to prevent issues with browser extensions that change fonts */
+    font-family: 'icomoon' !important;
+    speak: none;
+    font-style: normal;
+    font-weight: normal;
+    font-variant: normal;
+    text-transform: none;
+    line-height: 1;
+
+    /* Better Font Rendering =========== */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+.icon-note_add:before {
+    content: "\e900";
+}
+.icon-download:before {
+    content: "\e960";
+}
+.icon-upload:before {
+    content: "\e961";
+}
+

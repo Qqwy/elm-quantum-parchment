@@ -21,7 +21,20 @@ module.exports = ({ mode, presets } = { mode: "production", presets: [] }) => {
         devServer: {
             disableHostCheck: true,
         },
-
+        module: {
+            rules: [
+                {
+                    test: /\.(woff(2)?|ttf|eot|svg)(\?v=\d+\.\d+\.\d+)?$/,
+                    use: [{
+                        loader: 'file-loader',
+                        options: {
+                            name: '[name].[ext]',
+                            outputPath: 'fonts/'
+                        }
+                    }]
+                } 
+            ]
+        },
 
       plugins: [
         new HtmlWebpackPlugin({
