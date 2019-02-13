@@ -1,6 +1,8 @@
-module Windows.Models exposing (..)
+module Windows.Models exposing (Card, CardId, CurrentWindow, Window, WindowId, WindowManipulationType(..), WindowMode(..), WindowsModel, changeCardContent, changeCardTitle, encodeWindowsModel, initialWindows, normalizeWindowSize, toJSON)
 
 import Coord2D exposing (Coord2D)
+import Json.Encode
+
 
 type alias WindowsModel =
     { windows : List Window
@@ -53,10 +55,11 @@ type alias Card =
     , content : String
     }
 
+
 initialWindows : WindowsModel
 initialWindows =
     { windows =
-        [ { card_id = 0, size = { x = 100, y = 100 }, position = { x = 30, y = 40 }, mode = Edit, is_minified = False }
+        [ { card_id = 0, size = { x = 100, y = 100 }, position = { x = 30, y = 40 }, mode = Read, is_minified = False }
         , { card_id = 1, size = { x = 150, y = 100 }, position = { x = 150, y = 30 }, mode = Read, is_minified = False }
         ]
     , window_orders = [ 0, 1 ]
@@ -72,6 +75,7 @@ initialWindows =
 
 changeCardContent content card =
     { card | content = content }
+
 
 changeCardTitle title card =
     { card | title = title }
@@ -90,3 +94,43 @@ normalizeWindowSize window =
     in
     { window | size = size, position = position }
 
+
+toJSON : WindowsModel -> String
+toJSON model =
+    Json.Encode.encode 4 (encodeWindowsModel model)
+
+
+encodeWindowsModel model =
+    Json.Encode.object
+        [ ( "cards", Json.Encode.list encodeCard model.cards )
+        , ( "windows", Json.Encode.list encodeWindow model.windows )
+        , ( "window_orders", encodeWindowOrders model.window_orders )
+        ]
+
+
+encodeWindowOrders : List Int -> Json.Encode.Value
+encodeWindowOrders window_orders =
+    Json.Encode.list Json.Encode.int window_orders
+
+
+encodeCard card =
+    Json.Encode.object
+        [ ( "title", Json.Encode.string card.title )
+        , ( "content", Json.Encode.string card.content )
+        ]
+
+
+encodeWindow window =
+    Json.Encode.object
+        [ ( "card_id", Json.Encode.int window.card_id )
+        , ( "position", encodeCoord2D window.position )
+        , ( "size", encodeCoord2D window.size )
+        , ( "is_minified", Json.Encode.bool window.is_minified )
+        ]
+
+
+encodeCoord2D coord2d =
+    Json.Encode.object
+        [ ( "x", Json.Encode.int coord2d.x )
+        , ( "y", Json.Encode.int coord2d.y )
+        ]

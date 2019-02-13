@@ -5,6 +5,7 @@ type Msg
     = WindowsMessage WindowsMessage
     | MouseMove Int Int
     | NewWindow
+    | DownloadWindowsModelAsFile
     | Todo
 
 

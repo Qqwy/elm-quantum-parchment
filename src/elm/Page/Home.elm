@@ -55,6 +55,7 @@ view model =
             [ h2 [] [ text model.pageTitle ]
             , div [] [ text model.pageBody ]
             , div [ class "new-window-button", onClick NewWindow ] [ text "New Window" ]
+            , div [ class "download-button", onClick DownloadWindowsModelAsFile ] [ text "Save" ]
             , Windows.View.view model.windows_model
             ]
     }

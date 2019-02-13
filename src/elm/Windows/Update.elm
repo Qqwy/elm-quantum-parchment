@@ -4,6 +4,7 @@ import Json.Decode
 import List.Extra
 import Markdown
 import Maybe.Extra
+import File.Download
 import Windows.Msgs exposing (Msg(..), WindowsMessage(..))
 import Windows.Models exposing (..)
 import Coord2D exposing (Coord2D)
@@ -13,6 +14,8 @@ update msg model =
     case msg of
         Todo ->
             ( model, Cmd.none )
+        DownloadWindowsModelAsFile ->
+            (model, File.Download.string "cards.qparch" "text/json" (Windows.Models.toJSON model.windows_model))
 
         MouseMove x y ->
             let
