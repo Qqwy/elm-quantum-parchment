@@ -24,8 +24,6 @@ $window-resize-handle-size: 20px;
     box-shadow: 3px 3px 6px rgba(0,0,0,0.3);
     border: 1px solid rgba(0,0,0,0.5);
 
-    transition-duration: .2s;
-    transition-property: box-shadow, border, width, height;
 
 
     .window-body {
@@ -148,9 +146,6 @@ $window-resize-handle-size: 20px;
     &:active {
         box-shadow: 6px 6px 6px rgba(0,0,0,0.6);
 
-        transition: width 0s, height 0s, top 0s, left 0s;
-
-
     }
 
     &.minified {
@@ -169,4 +164,16 @@ $window-resize-handle-size: 20px;
             display: none;
         }
     }
+}
+
+body:hover {
+    .window{
+        transition-duration: .2s;
+        transition-property: box-shadow, border, width, height;
+        &:active {
+            transition: width 0s, height 0s, top 0s, left 0s;
+        }
+
+    }
+
 }
