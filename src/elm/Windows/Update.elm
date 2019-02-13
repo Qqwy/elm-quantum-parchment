@@ -153,6 +153,14 @@ updateWindowsMessage msg model =
             in
             ( { model | cards = new_cards }, Cmd.none )
 
+        ChangeCardTitle card_id new_title ->
+            let
+                new_cards =
+                    model.cards
+                        |> List.Extra.updateAt card_id (changeCardTitle new_title)
+            in
+            ( { model | cards = new_cards }, Cmd.none )
+
         ChangeWindowModeTo window_id new_mode ->
             let
                 new_windows =

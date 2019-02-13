@@ -1,7 +1,7 @@
 module Windows.View exposing (..)
 
-import Html exposing (Attribute, Html, div, h2, text, textarea)
-import Html.Attributes exposing (class, id, style)
+import Html exposing (Attribute, Html, div, h2, text, textarea, input)
+import Html.Attributes exposing (class, id, style, value)
 import Html.Events exposing (onBlur, onClick, onDoubleClick, onInput, onMouseDown, onMouseUp)
 import Windows.Msgs exposing (..)
 import Windows.Models exposing (..)
@@ -88,7 +88,7 @@ viewWindow window_id cards window window_depth_index =
                 , onMouseDown (WindowsMessage <| StartWindowMove window_id)
                 , onDoubleClick (WindowsMessage <| ToggleMinification window_id)
                 ]
-                [ text title ]
+                [ input [class "window-bar-title", value title, onInput (\str -> WindowsMessage <| ChangeCardTitle window.card_id str)] [] ]
             , div [ class "window-resize-handle", onMouseDown (WindowsMessage <| StartWindowResize window_id) ] [ text "" ]
             , textarea
                 [ class "window-content-edit"

@@ -73,6 +73,9 @@ initialWindows =
 changeCardContent content card =
     { card | content = content }
 
+changeCardTitle title card =
+    { card | title = title }
+
 
 normalizeWindowSize window =
     let

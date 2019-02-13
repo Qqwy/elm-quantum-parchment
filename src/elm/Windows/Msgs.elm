@@ -13,6 +13,7 @@ type WindowsMessage
     | StartWindowResize WindowId
     | StopWindowManipulation
     | ChangeCardContent CardId String
+    | ChangeCardTitle CardId String
     | MoveWindowToFront WindowId
     | ChangeWindowModeTo WindowId WindowMode
     | ToggleMinification WindowId
