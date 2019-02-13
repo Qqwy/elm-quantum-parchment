@@ -12,6 +12,8 @@ import Page.NotFound as NotFound
 import Route exposing (Route)
 import Session exposing (Session)
 import Url exposing (Url)
+import Windows.Models exposing (WindowsModel)
+import Windows.Decode
 
 
 
@@ -23,17 +25,33 @@ import Url exposing (Url)
 -- MODEL
 
 
-type Model
+type alias Model =
+    { page : PathModel
+    , windows_model : WindowsModel
+    }
+
+
+type PathModel
     = Redirect Session
     | NotFound Session
     | Home Home.Model
     | About About.Model
 
 
-init : Value -> Url -> Nav.Key -> ( Model, Cmd Msg )
-init _ url navKey =
+init : String -> Url -> Nav.Key -> ( Model, Cmd Msg )
+init serialized_windows_model_from_localstorage url navKey =
+    let
+        initial_windows =
+            serialized_windows_model_from_localstorage
+                |> Windows.Decode.fromJSONString
+                |> Debug.log "Decoded initial windows"
+                |> Result.withDefault Windows.Models.initialWindows
+
+        initial_page =
+            Redirect (Session.fromViewer navKey)
+    in
     changeRouteTo (Route.fromUrl url)
-        (Redirect (Session.fromViewer navKey))
+        { page = initial_page, windows_model = initial_windows }
 
 
 
@@ -52,7 +70,7 @@ view model =
             , body = List.map (Html.map toMsg) body
             }
     in
-    case model of
+    case model.page of
         Redirect _ ->
             viewPage Page.Other (\_ -> Ignored) Blank.view
 
@@ -80,8 +98,8 @@ type Msg
 
 
 toSession : Model -> Session
-toSession page =
-    case page of
+toSession model =
+    case model.page of
         Redirect session ->
             session
 
@@ -103,13 +121,13 @@ changeRouteTo maybeRoute model =
     in
     case maybeRoute of
         Nothing ->
-            ( NotFound session, Cmd.none )
+            ( { model | page = NotFound session }, Cmd.none )
 
         Just Route.Root ->
             ( model, Route.replaceUrl (Session.navKey session) Route.Home )
 
         Just Route.Home ->
-            Home.init session
+            Home.init session model.windows_model
                 |> updateWith Home GotHomeMsg model
 
         Just Route.About ->
@@ -119,7 +137,7 @@ changeRouteTo maybeRoute model =
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-    case ( msg, model ) of
+    case ( msg, model.page ) of
         ( Ignored, _ ) ->
             ( model, Cmd.none )
 
@@ -167,9 +185,9 @@ update msg model =
             ( model, Cmd.none )
 
 
-updateWith : (subModel -> Model) -> (subMsg -> Msg) -> Model -> ( subModel, Cmd subMsg ) -> ( Model, Cmd Msg )
+updateWith : (subModel -> PathModel) -> (subMsg -> Msg) -> Model -> ( subModel, Cmd subMsg ) -> ( Model, Cmd Msg )
 updateWith toModel toMsg model ( subModel, subCmd ) =
-    ( toModel subModel
+    ( { model | page = toModel subModel }
     , Cmd.map toMsg subCmd
     )
 
@@ -180,7 +198,7 @@ updateWith toModel toMsg model ( subModel, subCmd ) =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    case model of
+    case model.page of
         NotFound _ ->
             Sub.none
 
@@ -198,7 +216,7 @@ subscriptions model =
 -- MAIN
 
 
-main : Program Value Model Msg
+main : Program String Model Msg
 main =
     Browser.application
         { init = init

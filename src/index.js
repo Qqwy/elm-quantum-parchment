@@ -9,7 +9,7 @@ console.log(require('./elm/Main.elm'));
 
 const storageKey = "QuantumParchment";
 
-var app = Elm.Main.init({node: "app-container", flags: {}});
+var app = Elm.Main.init({node: "app-container", flags: loadStorage()});
 console.log(app, loadStorage());
 
 app.ports.persistToStorage.subscribe(

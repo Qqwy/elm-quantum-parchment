@@ -32,12 +32,12 @@ type alias Msg =
     Windows.Msgs.Msg
 
 
-init : Session -> ( Model, Cmd Msg )
-init session =
+init : Session -> WindowsModel ->( Model, Cmd Msg )
+init session windows_model =
     ( { session = session
       , pageTitle = ""
       , pageBody = ""
-      , windows_model = Windows.Models.initialWindows
+      , windows_model = windows_model
       }
     , Cmd.none
     )
