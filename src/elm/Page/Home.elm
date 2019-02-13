@@ -13,8 +13,8 @@ import Windows.Models exposing (..)
 import Windows.Msgs exposing (..)
 import Windows.Update
 import Windows.View
-
-
+import Ports
+import Windows.Decode
 
 
 
@@ -56,6 +56,7 @@ view model =
             , div [] [ text model.pageBody ]
             , div [ class "new-window-button", onClick NewWindow ] [ text "New Window" ]
             , div [ class "download-button", onClick DownloadWindowsModelAsFile ] [ text "Save" ]
+            , div [ class "upload-button", onClick (RequestLoadWindowsModelFile) ] [ text "Load" ]
             , Windows.View.view model.windows_model
             ]
     }
@@ -87,9 +88,20 @@ update msg model =
 
 
 subscriptions : Model -> Sub Msg
-subscriptions _ =
+subscriptions model =
     -- Sub.none
+    Sub.batch [
     Browser.Events.onMouseMove mousePosDecoder
+        , Ports.storageUpdate (\json ->
+                                   json
+
+                                   |> Json.Decode.decodeValue Json.Decode.string
+                                   |> Result.andThen Windows.Decode.fromJSONString
+                                   |> Result.withDefault model.windows_model
+                                   |> WindowsModelLoaded
+                              )
+
+        ]
 
 
 mousePosDecoder =

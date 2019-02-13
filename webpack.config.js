@@ -18,6 +18,10 @@ module.exports = ({ mode, presets } = { mode: "production", presets: [] }) => {
         main: path.join(__dirname, './src/index.js'),
         vendor: path.join(__dirname, './src/assets/js/vendor.js'),
       },
+        devServer: {
+            disableHostCheck: true,
+        },
+
 
       plugins: [
         new HtmlWebpackPlugin({

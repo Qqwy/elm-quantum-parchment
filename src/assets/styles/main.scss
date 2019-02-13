@@ -148,7 +148,7 @@ $window-resize-handle-size: 20px;
     &:active {
         box-shadow: 6px 6px 6px rgba(0,0,0,0.6);
 
-        transition: width 0s, height 0s;
+        transition: width 0s, height 0s, top 0s, left 0s;
 
 
     }

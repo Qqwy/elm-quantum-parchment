@@ -1,6 +1,7 @@
-module Windows.Models exposing (Card, CardId, CurrentWindow, Window, WindowId, WindowManipulationType(..), WindowMode(..), WindowsModel, changeCardContent, changeCardTitle, encodeWindowsModel, initialWindows, normalizeWindowSize, toJSON)
+module Windows.Models exposing (Card, CardId, CurrentWindow, Window, WindowId, WindowManipulationType(..), WindowMode(..), WindowsModel, changeCardContent, changeCardTitle, initialWindows, normalizeWindowSize)
 
 import Coord2D exposing (Coord2D)
+import Json.Decode
 import Json.Encode
 
 
@@ -95,42 +96,3 @@ normalizeWindowSize window =
     { window | size = size, position = position }
 
 
-toJSON : WindowsModel -> String
-toJSON model =
-    Json.Encode.encode 4 (encodeWindowsModel model)
-
-
-encodeWindowsModel model =
-    Json.Encode.object
-        [ ( "cards", Json.Encode.list encodeCard model.cards )
-        , ( "windows", Json.Encode.list encodeWindow model.windows )
-        , ( "window_orders", encodeWindowOrders model.window_orders )
-        ]
-
-
-encodeWindowOrders : List Int -> Json.Encode.Value
-encodeWindowOrders window_orders =
-    Json.Encode.list Json.Encode.int window_orders
-
-
-encodeCard card =
-    Json.Encode.object
-        [ ( "title", Json.Encode.string card.title )
-        , ( "content", Json.Encode.string card.content )
-        ]
-
-
-encodeWindow window =
-    Json.Encode.object
-        [ ( "card_id", Json.Encode.int window.card_id )
-        , ( "position", encodeCoord2D window.position )
-        , ( "size", encodeCoord2D window.size )
-        , ( "is_minified", Json.Encode.bool window.is_minified )
-        ]
-
-
-encodeCoord2D coord2d =
-    Json.Encode.object
-        [ ( "x", Json.Encode.int coord2d.x )
-        , ( "y", Json.Encode.int coord2d.y )
-        ]

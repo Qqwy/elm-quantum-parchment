@@ -1,21 +1,55 @@
-module Windows.Update exposing (..)
+module Windows.Update exposing (moveToFront, moveValueToFront, update, updateWindow, updateWindowsMessage)
 
+import Coord2D exposing (Coord2D)
+import File exposing (File)
+import File.Download
+import File.Select
 import Json.Decode
+import Json.Encode
 import List.Extra
 import Markdown
 import Maybe.Extra
-import File.Download
-import Windows.Msgs exposing (Msg(..), WindowsMessage(..))
+import Ports
+import Task
+import Windows.Decode
+import Windows.Encode
 import Windows.Models exposing (..)
-import Coord2D exposing (Coord2D)
+import Windows.Msgs exposing (Msg(..), WindowsMessage(..))
 
-update : Msg -> {a | windows_model : WindowsModel } -> ( {a | windows_model : WindowsModel }, Cmd Msg )
+
+update : Msg -> { a | windows_model : WindowsModel } -> ( { a | windows_model : WindowsModel }, Cmd Msg )
 update msg model =
     case msg of
         Todo ->
             ( model, Cmd.none )
+
         DownloadWindowsModelAsFile ->
-            (model, File.Download.string "cards.qparch" "text/json" (Windows.Models.toJSON model.windows_model))
+            ( model, File.Download.string "cards.qparch" "text/qparch" (Windows.Encode.toJSONString model.windows_model) )
+
+        RequestLoadWindowsModelFile ->
+            let
+                command =
+                    File.Select.file [ "text/qparch" ] LoadWindowsModelFile
+            in
+            ( model, command )
+
+        LoadWindowsModelFile file ->
+            let
+                commands =
+                    file
+                        |> File.toString
+                        |> Task.map (Windows.Decode.fromJSONString)
+                        |> Task.map (Result.withDefault model.windows_model)
+                        |> Task.perform WindowsModelLoaded
+            in
+            ( model, commands )
+
+        WindowsModelLoaded new_windows_model ->
+            let
+                is_changed =
+                    model.windows_model == new_windows_model
+            in
+            ( { model | windows_model = new_windows_model }, Cmd.none )
 
         MouseMove x y ->
             let
@@ -47,8 +81,16 @@ update msg model =
                                     List.Extra.updateAt current_window.window_id (updateWindow mouse_delta current_window.manipulation) windows
                     in
                     { windows_model | windows = new_windows, mouse_position = Coord2D x y, mouse_delta = mouse_delta }
+
+                command =
+                    case windows_model.current_window of
+                        Nothing ->
+                            Cmd.none
+
+                        Just _ ->
+                            persistToStorage new_windows_model
             in
-            ( { model | windows_model = new_windows_model }, Cmd.none )
+            ( { model | windows_model = new_windows_model }, command )
 
         NewWindow ->
             let
@@ -72,23 +114,27 @@ update msg model =
 
                 new_window =
                     { card_id = new_card_id, size = { x = 150, y = 150 }, position = { x = 100, y = 100 }, mode = Edit, is_minified = False }
-                new_window_id = List.length windows
+
+                new_window_id =
+                    List.length windows
 
                 new_windows =
-                    windows ++ [new_window]
-                new_window_orders = new_window_id :: windows_model.window_orders
+                    windows ++ [ new_window ]
+
+                new_window_orders =
+                    new_window_id :: windows_model.window_orders
 
                 new_windows_model =
                     { windows_model | cards = new_cards, windows = new_windows, window_orders = new_window_orders }
             in
-            ( { model | windows_model = new_windows_model }, Cmd.none )
+            ( { model | windows_model = new_windows_model }, persistToStorage new_windows_model )
 
         WindowsMessage window_message ->
             let
-                ( windows_model, commands ) =
+                ( windows_model, command ) =
                     updateWindowsMessage window_message model.windows_model
             in
-            ( { model | windows_model = windows_model }, commands )
+            ( { model | windows_model = windows_model }, Cmd.batch [ command, persistToStorage windows_model ] )
 
 
 updateWindow mouse_delta manipulation window =
@@ -181,10 +227,10 @@ updateWindowsMessage msg model =
             ( { model | windows = new_windows }, Cmd.none )
 
 
-
 moveToFront : Int -> List a -> List a
 moveToFront index list =
     list
+
 
 moveValueToFront : Int -> List Int -> List Int
 moveValueToFront value list =
@@ -197,3 +243,9 @@ moveValueToFront value list =
     in
     list_head :: list_tail
 
+
+persistToStorage windows_model =
+    windows_model
+        |> Windows.Encode.toJSONString
+        |> Json.Encode.string
+        |> Ports.persistToStorage
