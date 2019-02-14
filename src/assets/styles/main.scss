@@ -209,6 +209,10 @@ body:hover {
         display: inline-block;
         font-size: 2em;
         margin: 2px 10px;
+        small {
+            font-size: 0.6em;
+            font-style: italic;
+        }
     }
     .button {
         display: inline-block;

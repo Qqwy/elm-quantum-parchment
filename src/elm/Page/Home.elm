@@ -1,7 +1,7 @@
 module Page.Home exposing (Model, Msg, init, subscriptions, toSession, update, view)
 
 import Browser.Events
-import Html exposing (Attribute, Html, div, h2, span, text, textarea)
+import Html exposing (Attribute, Html, div, h2, span, text, textarea, small)
 import Html.Attributes exposing (class, id, style)
 import Html.Events exposing (onBlur, onClick, onDoubleClick, onInput, onMouseDown, onMouseUp)
 import Json.Decode
@@ -54,7 +54,7 @@ view model =
     , content =
         div [ class "container" ]
             [ div [ class "button-menu" ]
-                [ div [class "header"] [text "QuantumParchment v0.1"]
+                [ div [class "header"] [text "QuantumParchment v0.1", small [] [text "by Qqwy"]]
                 , div [ class "new-window-button button", onClick NewWindow ] [ span [ class "icon-note_add" ] [], text "Add Card" ]
                 , div [ class "download-button button", onClick DownloadWindowsModelAsFile ] [ span [ class "icon-download" ] [], text "Save" ]
                 , div [ class "upload-button button", onClick RequestLoadWindowsModelFile ] [ span [ class "icon-upload" ] [], text "Load" ]
