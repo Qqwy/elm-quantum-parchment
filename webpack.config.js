@@ -35,11 +35,23 @@ console.log('asset_path', asset_path); // 'local'
                     use: [{
                         loader: 'file-loader',
                         options: {
-                            name: '[name].[ext]',
+                            name: '[name].[hash].[ext]',
                             outputPath: 'fonts/'
                         }
                     }]
+                },
+                {
+                    test: /\.(png|jpg|gif|svg)(\?v=\d+\.\d+\.\d+)?$/,
+                    use: [{
+                        loader: 'file-loader',
+                        options: {
+                            name: '[name].[hash].[ext]',
+                            outputPath:  'images/'
+                        }
+                    }
+                    ]
                 }
+
             ]
         },
 
