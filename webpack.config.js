@@ -13,7 +13,7 @@ module.exports = ({ mode, presets, asset_path} = { mode: "production", presets: 
 
 // Try the environment variable, otherwise use root
 console.log('asset_path', asset_path); // 'local'
-
+// __webpack_public_path__ = asset_path;
   return webpackMerge(
     {
       mode,
@@ -22,6 +22,9 @@ console.log('asset_path', asset_path); // 'local'
         main: path.join(__dirname, './src/index.js'),
         vendor: path.join(__dirname, './src/assets/js/vendor.js'),
       },
+        output: {
+            publicPath: asset_path
+        },
         devServer: {
             disableHostCheck: true,
         },
@@ -38,9 +41,6 @@ console.log('asset_path', asset_path); // 'local'
                     }]
                 }
             ]
-        },
-        output: {
-            publicPath: asset_path
         },
 
       plugins: [
