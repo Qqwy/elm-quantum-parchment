@@ -10,10 +10,15 @@ $window-minified-width: 150px;
 $window-hpadding: 30px;
 $window-resize-handle-size: 20px;
 
+$typeface: "Palatino Linotype", "Book Antiqua", Palatino, Georgia, serif;
 html, body {
-    font-family: Georgia, Palatino Linotype, "serif";
-
+    font-family: $typeface;
+    line-height: 1em;
     font-size: 12px;
+
+    background-image: url("/assets/images/bgtexture.jpg");
+    background-attachment: fixed;
+
 }
 
 * {
@@ -37,9 +42,14 @@ html, body {
         width: 100%;
         height: 100%;
 
-        background-color: rgba(255, 255, 255, 0.7);
+        background-color: rgba(255, 255, 255, 0.5);
 
         z-index: 1;
+        line-height: 1.4em;
+
+        img {
+            max-width: 100%;
+        }
     }
     .window-content-edit, .window-content-show {
         position: absolute;
@@ -55,7 +65,7 @@ html, body {
         overflow: auto;
 
         font-size: 13px;
-        font-family: Georgia, Palatino Linotype, "serif";
+        font-family: $typeface;
 
 
         border: none;
@@ -73,6 +83,10 @@ html, body {
             /* margin-right: -10px; */
             height: 100%;
             padding-top: $window-bar-height + 10px;
+        }
+
+        ul, ol {
+            padding-left: 1em;
         }
     }
 
@@ -109,7 +123,7 @@ html, body {
             overflow: hidden;
             text-overflow: ellipsis;
 
-            font-family: Georgia, Palatino Linotype, "serif";
+            font-family: $typeface;
             font-size: 1.4em;
         }
     }
@@ -190,19 +204,29 @@ body:hover {
 }
 
 .button-menu {
+    vertical-align: middle;
     .header {
         display: inline-block;
+        font-size: 2em;
+        margin: 2px 10px;
     }
     .button {
         display: inline-block;
+        position: relative;
         padding: 5px 10px;
         margin: 2px 10px;
+        top: -5px;
         background-color: rgba(0,0,0,0.1);
         border-radius: 20px;
+        box-shadow: 3px 3px 3px rgba(0,0,0,0.2);
 
         cursor: pointer;
 
         transition-duration: .2s;
+
+        & > span {
+            margin-right: 1em;
+        }
 
         &:hover {
             

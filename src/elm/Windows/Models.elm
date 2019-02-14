@@ -91,7 +91,7 @@ normalizeWindowSize window =
         position =
             window.position
                 |> Coord2D.maxXY 0 0
-                |> Coord2D.minXY 1600 800
+                |> Coord2D.minXY 4000 2000
     in
     { window | size = size, position = position }
 
