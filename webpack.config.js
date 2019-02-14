@@ -1,3 +1,4 @@
+const webpack = require('webpack');
 const path = require('path');
 const webpackMerge = require('webpack-merge');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
@@ -7,8 +8,11 @@ const CopyWebpackPlugin = require('copy-webpack-plugin')
 const modeConfig = env => require(`./build-utils/webpack.${env}`)(env);
 const presetConfig = require("./build-utils/loadPresets");
 
-module.exports = ({ mode, presets } = { mode: "production", presets: [] }) => {
+module.exports = ({ mode, presets, asset_path} = { mode: "production", presets: [], asset_path: "/"}) => {
   console.log(`Building for: ${mode}`);
+
+// Try the environment variable, otherwise use root
+console.log('asset_path', asset_path); // 'local'
 
   return webpackMerge(
     {
@@ -32,8 +36,11 @@ module.exports = ({ mode, presets } = { mode: "production", presets: [] }) => {
                             outputPath: 'fonts/'
                         }
                     }]
-                } 
+                }
             ]
+        },
+        output: {
+            publicPath: asset_path
         },
 
       plugins: [
