@@ -57,5 +57,8 @@
     "webpack-dashboard": "^2.0.0",
     "webpack-dev-server": "^3.1.14",
     "webpack-merge": "^4.2.1"
+  },
+  "dependencies": {
+    "push-dir": "^0.4.1"
   }
 }
