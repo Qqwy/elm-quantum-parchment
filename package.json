@@ -12,13 +12,14 @@
   "scripts": {
     "webpack": "webpack",
     "webpack-dev-server": "webpack-dev-server",
-    "prod": "npm run webpack -- --env.mode production",
-    "prod:analyze": "npm run prod -- --env.presets analyze",
-    "prod:compress": "npm run prod -- --env.presets compress",
+    "prod": "yarn run webpack -- --env.mode production",
+    "prod:analyze": "yarn run prod -- --env.presets analyze",
+    "prod:compress": "yarn run prod -- --env.presets compress",
     "dev": "webpack-dashboard --title 'Elm Dev Server' -- npm run webpack-dev-server -- --env.mode development",
     "elm-analyse": "elm-analyse -s -o",
     "preprod": "rimraf dist",
-    "lint": "stylelint src/assets/styles"
+    "lint": "stylelint src/assets/styles",
+    "github-pages": "yarn run prod; yarn run push-dir --dir=dist/ --branch=gh-pages;"
   },
   "license": "MIT",
   "browserslist": [
