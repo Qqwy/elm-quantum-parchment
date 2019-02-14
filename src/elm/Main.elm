@@ -44,7 +44,6 @@ init serialized_windows_model_from_localstorage url navKey =
         initial_windows =
             serialized_windows_model_from_localstorage
                 |> Windows.Decode.fromJSONString
-                |> Debug.log "Decoded initial windows"
                 |> Result.withDefault Windows.Models.initialWindows
 
         initial_page =
